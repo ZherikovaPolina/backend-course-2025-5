@@ -2,6 +2,7 @@ const { program } = require('commander');
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
+const superagent = require('superagent');
 
 program
   .requiredOption('-h, --host <host>', 'Server address')
@@ -19,23 +20,23 @@ const server = http.createServer(async (req, res) => {
   const code = req.url.split('/')[1] || '';
   const filePath = path.join(options.cache, `${code}.jpg`);
 
-
-  if (req.method === 'GET') {
-    try {
-      const data = await fs.promises.readFile(filePath);
-      res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-      res.end(data);
-    } catch (err) {
-      if (err.code === 'ENOENT') {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('404 Not Found');
-      } else {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('500 Internal Server Error');
-      }
-    }
-    return;
+if (req.method === 'GET') {
+  try {
+  const data = await fs.promises.readFile(filePath);
+  res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+  return res.end(data);
+} catch {
+  try {
+    const response = await superagent.get(`https://http.cat/${code}`);
+    await fs.promises.writeFile(filePath, response.body); 
+    res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+    return res.end(response.body);
+  } catch {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    return res.end('404 Not Found');
   }
+}
+}
 
   if (req.method === 'PUT') {
     try {
