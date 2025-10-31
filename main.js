@@ -53,6 +53,23 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === 'DELETE') {
+    try {
+      await fs.promises.unlink(filePath);
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('200 OK');
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('404 Not Found');
+      } else {
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('500 Internal Server Error');
+      }
+    }
+    return;
+  }
+
   res.writeHead(405, { 'Content-Type': 'text/plain' });
   res.end('405 Method Not Allowed');
 });
